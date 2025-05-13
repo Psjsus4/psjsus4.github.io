@@ -7,8 +7,8 @@
 <meta name="generator" content="Jekyll v3.10.0" />
 <meta property="og:title" content="Baby’s First Format writeup" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;):" />
-<meta property="og:description" content="We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;):" />
+<meta name="description" content="We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;)" />
+<meta property="og:description" content="We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;)" />
 <link rel="canonical" href="https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html" />
 <meta property="og:url" content="https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html" />
 <meta property="og:site_name" content="Psjsus4 blog" />
@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Baby’s First Format writeup" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-05-07T22:22:22+00:00","datePublished":"2025-05-07T22:22:22+00:00","description":"We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;):","headline":"Baby’s First Format writeup","mainEntityOfPage":{"@type":"WebPage","@id":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html"},"url":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2025-05-07T22:22:22+00:00","datePublished":"2025-05-07T22:22:22+00:00","description":"We are given a 64-bit ELF binary (baby_fmt) that reads a string from the user, applies a custom encoder and then prints it out via printf() if the input contains &quot;funny&quot;. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of __stack_chk_fail with a hidden function that calls system(&quot;/bin/sh&quot;)","headline":"Baby’s First Format writeup","mainEntityOfPage":{"@type":"WebPage","@id":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html"},"url":"https://psjsus4.github.io//bitsiege/ctf/2025/05/07/babyfmt.html"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://psjsus4.github.io//feed.xml" title="Psjsus4 blog" /></head>
 <body><header class="site-header" role="banner">
@@ -47,7 +47,7 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>We are given a 64-bit ELF binary (<code class="language-plaintext highlighter-rouge">baby_fmt</code>) that reads a string from the user, applies a custom encoder and then prints it out via <code class="language-plaintext highlighter-rouge">printf()</code> if the input contains <code class="language-plaintext highlighter-rouge">"funny"</code>. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of <code class="language-plaintext highlighter-rouge">__stack_chk_fail</code> with a hidden function that calls <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>:</p>
+    <p>We are given a 64-bit ELF binary (<code class="language-plaintext highlighter-rouge">baby_fmt</code>) that reads a string from the user, applies a custom encoder and then prints it out via <code class="language-plaintext highlighter-rouge">printf()</code> if the input contains <code class="language-plaintext highlighter-rouge">"funny"</code>. But since the output is not formatted it’s vulnerable to the fsb. I exploited it by overwriting the got of <code class="language-plaintext highlighter-rouge">__stack_chk_fail</code> with a hidden function that calls <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code></p>
 
 <h2 id="baby_fmt-code">baby_fmt code</h2>
 
